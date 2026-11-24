@@ -35,6 +35,7 @@ def main() -> int:
     assert 1 <= len(ENTRY) <= 200, f"entry is {len(ENTRY)} chars, must be 1-200"
     assert "\n" not in ENTRY and "\r" not in ENTRY, "entry must be a single line"
     assert ENTRY.strip(), "entry must not be only whitespace"
+    assert ENTRY == ENTRY.strip(), "entry must not pad with leading/trailing space"
     ENTRY.encode("utf-8")  # must be valid UTF-8
 
     out_path = os.environ.get("ENTRY_OUTPUT", "/output/entry.txt")
