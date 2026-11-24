@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
-"""Say What Actually Broke — make.fun entry.
+"""One line of error copy for the make.fun "Say What Actually Broke" round.
 
-Writes one line of software error copy to /output/entry.txt:
-a payment that went through while its confirmation got lost,
-told straight, with a twist, and a concrete next step.
+The scene: the money moved, the proof of it did not. The program hands
+back a single honest sentence a real product could show in a dialog:
+what happened, why the user should not pay again, and the one check
+that keeps their money safe.
 
-Stdlib only, no network, deterministic.
-
-Candidate scoring (against the judge brief, in order):
-  A password/DB "forgot it exists" — funny, but the next step is generic.
-  B OOM ate the shopping cart — good image, weak next step ("start again").
-  C upload lost mid-flight — failure too vague, retry is the whole joke.
-  D/D2 payment went through, receipt printer jammed on "success" — the
-    winner: names the exact failure (money taken, confirmation lost),
-    gives the one money-saving next step (check the bank before paying
-    twice), and the good-news/bad-news frame is repeatable out loud.
-    134 chars, single line, shippable in a real error dialog.
+Running it drops the line into /output/entry.txt with no trailing
+newline, exactly as the judge reads it.
 """
+
+from __future__ import annotations
 
 import os
 import sys
@@ -27,23 +21,40 @@ ENTRY = (
     "Check your bank before paying twice."
 )
 
+MAX_CHARS = 200
+DEFAULT_OUTPUT = "/output/entry.txt"
+
+
+def entry_line() -> str:
+    """Return the entry line, checked against the competition's gate."""
+    line = ENTRY
+    if not isinstance(line, str):
+        raise TypeError("entry must be text")
+    if not line.strip():
+        raise ValueError("entry must not be blank")
+    if line != line.strip():
+        raise ValueError("entry must not carry padding spaces")
+    if len(line) > MAX_CHARS:
+        raise ValueError(f"entry is {len(line)} chars, over the {MAX_CHARS} cap")
+    if "\n" in line or "\r" in line:
+        raise ValueError("entry must stay on one line")
+    line.encode("utf-8")
+    return line
+
+
+def write_entry(path: str) -> None:
+    """Write the checked line to path, creating folders as needed."""
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as handle:
+        handle.write(entry_line())
+
 
 def main() -> int:
-    # Self-check: the gate requires UTF-8 text of 1-200 chars,
-    # a single line, and not only whitespace.
-    assert isinstance(ENTRY, str)
-    assert 1 <= len(ENTRY) <= 200, f"entry is {len(ENTRY)} chars, must be 1-200"
-    assert "\n" not in ENTRY and "\r" not in ENTRY, "entry must be a single line"
-    assert ENTRY.strip(), "entry must not be only whitespace"
-    assert ENTRY == ENTRY.strip(), "entry must not pad with leading/trailing space"
-    ENTRY.encode("utf-8")  # must be valid UTF-8
-
-    out_path = os.environ.get("ENTRY_OUTPUT", "/output/entry.txt")
-    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
-    with open(out_path, "w", encoding="utf-8", newline="") as f:
-        f.write(ENTRY)  # no trailing newline
+    write_entry(os.environ.get("ENTRY_OUTPUT", DEFAULT_OUTPUT))
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
